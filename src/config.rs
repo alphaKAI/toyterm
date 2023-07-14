@@ -43,7 +43,8 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let shell = vec![std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_owned())];
+        //let shell = vec![std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_owned())];
+        let shell = vec![std::env::var("SHELL").unwrap_or_else(|_| "wsl.exe".to_owned())];
 
         Config {
             shell,
@@ -52,9 +53,9 @@ impl Default for Config {
 
             // FIXME: due to a bug on "config-rs", empty Vecs cannot be serialized properly.
             // https://github.com/mehcode/config-rs/issues/114
-            fonts_regular: vec![PathBuf::new()],
-            fonts_bold: vec![PathBuf::new()],
-            fonts_faint: vec![PathBuf::new()],
+            fonts_regular: vec![],
+            fonts_bold: vec![],
+            fonts_faint: vec![],
             font_size: 32,
 
             #[cfg(feature = "multiplex")]

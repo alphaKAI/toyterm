@@ -1,5 +1,6 @@
 #![allow(unused)]
 
+#[cfg(not(target_os = "windows"))]
 pub mod io {
     use std::os::unix::io::{AsRawFd as _, OwnedFd};
 
@@ -19,6 +20,71 @@ pub mod io {
         fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
             let nb = nix::unistd::read(self.0.as_raw_fd(), buf)?;
             Ok(nb)
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+pub mod io {
+    use std::io::{self, Read, Write};
+    use std::os::windows::io::{AsRawHandle, FromRawHandle};
+    use winapi::ctypes::c_void;
+    use winapi::shared::minwindef::{DWORD, TRUE};
+    use winapi::shared::winerror::{ERROR_PIPE_CONNECTED, ERROR_SUCCESS};
+    use winapi::um::fileapi::{ReadFile, WriteFile};
+    use winapi::um::handleapi::CloseHandle;
+    use winapi::um::namedpipeapi::{ConnectNamedPipe, CreatePipe, DisconnectNamedPipe};
+    use winapi::um::winbase::WaitNamedPipeA;
+    use winapi::um::winbase::{FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED};
+    use winapi::um::winbase::{PIPE_ACCESS_DUPLEX, PIPE_READMODE_BYTE, PIPE_TYPE_BYTE};
+    use winapi::um::winbase::{PIPE_REJECT_REMOTE_CLIENTS, PIPE_UNLIMITED_INSTANCES};
+    use winapi::um::winnt::{
+        FILE_SHARE_READ, FILE_SHARE_WRITE, GENERIC_READ, GENERIC_WRITE, HANDLE,
+    };
+
+    pub struct HandleIo<'a>(pub &'a HANDLE);
+
+    impl<'a> Write for HandleIo<'a> {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            let mut bytes_written: DWORD = 0;
+            unsafe {
+                WriteFile(
+                    *self.0,
+                    buf.as_ptr() as *const c_void,
+                    buf.len() as DWORD,
+                    &mut bytes_written,
+                    std::ptr::null_mut(),
+                )
+            };
+            if bytes_written > 0 {
+                Ok(bytes_written as usize)
+            } else {
+                Err(io::Error::last_os_error())
+            }
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl<'a> Read for HandleIo<'a> {
+        fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+            let mut bytes_read: DWORD = 0;
+            unsafe {
+                ReadFile(
+                    *self.0,
+                    buf.as_mut_ptr() as *mut c_void,
+                    buf.len() as DWORD,
+                    &mut bytes_read,
+                    std::ptr::null_mut(),
+                )
+            };
+            if bytes_read > 0 {
+                Ok(bytes_read as usize)
+            } else {
+                Err(io::Error::last_os_error())
+            }
         }
     }
 }

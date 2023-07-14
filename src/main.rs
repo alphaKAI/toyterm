@@ -3,7 +3,7 @@ fn main() {
     lazy_static::initialize(&toyterm::TOYTERM_CONFIG);
 
     // Setup env_logger
-    let our_logs = concat!(module_path!(), "=debug");
+    let our_logs = concat!(module_path!(), "=trace");
     let env = env_logger::Env::default().default_filter_or(our_logs);
     env_logger::Builder::from_env(env)
         .format_timestamp(None)
