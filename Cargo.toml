@@ -24,6 +24,7 @@ chrono = { optional = true, version = "0.4.22", default-features = false, featur
 serde_json = { optional = true, version = "1.0.83" }
 filedescriptor = "0.8.2"
 crossbeam-channel = "0.5.8"
+portable-pty = "0.8.1"
 
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
